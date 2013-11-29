@@ -17,15 +17,18 @@ cdef extern from "libcec/cec.h" namespace "CEC" nogil:
         bool StartBootloader()
         int8_t DetectAdapters(cec_adapter_descriptor*, uint8_t)
         void EnableCallbacks(void* param, ICECCallbacks* callbacks)
+        void InitVideoStandalone()
 
 
 cdef extern from "libcec/cec.h" nogil:
     cdef void* CECInitialise(libcec_configuration*)
     cdef void CECDestroy(ICECAdapter*)
 
+cdef bool _video_initialized = False
+
 cdef class AdapterDescriptor:
-    cdef bytes com_path
-    cdef bytes com_name
+    cdef readonly bytes com_path
+    cdef readonly bytes com_name
 
     cdef fill(self, const cec_adapter_descriptor* desc):
         self.com_path = desc.strComPath
@@ -43,7 +46,9 @@ cdef class Adapter:
     cdef public object menu_callback
     cdef public object source_callback
 
-    def __cinit__(self, device_name=b"python"):
+    def __cinit__(self, device_name=b"python", init_video=False):
+        # TODO: This should be called globally, since InitVideo may only be
+        #       called once (at most)
         name_len = len(device_name)
         if name_len > 12:
             raise RuntimeError("Device name has to be less than 13 characters")
@@ -62,6 +67,9 @@ cdef class Adapter:
         self._adapter = <ICECAdapter*>CECInitialise(&conf)
         if self._adapter == NULL:
             raise RuntimeError("Couldn't initialise CEC adapter")
+        if init_video and not _video_initialized:
+            self._adapter.InitVideoStandalone()
+            _video_initialized = True
 
     def __dealloc__(self):
         if self._callbacks:
