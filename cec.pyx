@@ -27,12 +27,12 @@ cdef extern from "libcec/cec.h" nogil:
 cdef bool _video_initialized = False
 
 cdef class AdapterDescriptor:
-    cdef readonly bytes com_path
-    cdef readonly bytes com_name
+    cdef readonly str com_path
+    cdef readonly str com_name
 
     cdef fill(self, const cec_adapter_descriptor* desc):
-        self.com_path = desc.strComPath
-        self.com_name = desc.strComName
+        self.com_path = bytes(desc.strComPath).encode("utf-8")
+        self.com_name = bytes(desc.strComName).encode("utf-8")
 
 cdef class Adapter:
     cdef ICECAdapter* _adapter
@@ -79,8 +79,16 @@ cdef class Adapter:
 
         CECDestroy(self._adapter)
 
-    def open(self, char* port, int timeout = 1000):
-        cdef bool result = self._adapter.Open(port, timeout)
+    def open(self, str port = "", int timeout = 1000):
+        if port == "":
+            l = self.list_adapters(1)
+            if len(l) == 0:
+                raise RuntimeError("No adapter found")
+            else:
+                port = l[0].com_name
+
+        cdef bytes decoded = port.decode("utf-8")
+        cdef bool result = self._adapter.Open(decoded, timeout)
         return result
 
     def close(self):
@@ -100,6 +108,9 @@ cdef class Adapter:
 
         count = self._adapter.DetectAdapters(device_descs, max_count)
         result = []
+        if count <= 0:
+            return result
+
         for i in range(count):
             desc = AdapterDescriptor()
             desc.fill(&device_descs[i])
