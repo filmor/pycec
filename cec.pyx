@@ -67,6 +67,8 @@ cdef class Adapter:
         self._adapter = <ICECAdapter*>CECInitialise(&conf)
         if self._adapter == NULL:
             raise RuntimeError("Couldn't initialise CEC adapter")
+
+        global _video_initialized
         if init_video and not _video_initialized:
             self._adapter.InitVideoStandalone()
             _video_initialized = True
