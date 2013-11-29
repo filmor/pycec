@@ -1,6 +1,5 @@
-
 cdef extern from "libcec/cectypes.h" namespace "CEC":
-    cdef enum cec_log_level:
+    enum cec_log_level:
         CEC_LOG_ERROR   = 1
         CEC_LOG_WARNING = 2
         CEC_LOG_NOTICE  = 4
@@ -8,7 +7,7 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
         CEC_LOG_DEBUG   = 16
         CEC_LOG_ALL     = 31
 
-    cdef enum cec_user_control_code:
+    enum cec_user_control_code:
         CEC_USER_CONTROL_CODE_SELECT                      = 0x00
         CEC_USER_CONTROL_CODE_UP                          = 0x01
         CEC_USER_CONTROL_CODE_DOWN                        = 0x02
@@ -92,7 +91,7 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
         CEC_USER_CONTROL_CODE_MAX                         = 0x96
         CEC_USER_CONTROL_CODE_UNKNOWN                     = 0xFF
     
-    cdef enum libcec_alert:
+    enum libcec_alert:
         CEC_ALERT_SERVICE_DEVICE
         CEC_ALERT_CONNECTION_LOST
         CEC_ALERT_PERMISSION_ERROR
@@ -100,11 +99,11 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
         CEC_ALERT_PHYSICAL_ADDRESS_ERROR
         CEC_ALERT_TV_POLL_FAILED
 
-    cdef enum cec_menu_state:
+    enum cec_menu_state:
         CEC_MENU_STATE_ACTIVATED = 0
         CEC_MENU_STATE_DEACTIVATED = 1
 
-    cdef enum cec_logical_address:
+    enum cec_logical_address:
         CECDEVICE_UNKNOWN          = -1 # not a valid logical address
         CECDEVICE_TV               = 0
         CECDEVICE_RECORDINGDEVICE1 = 1

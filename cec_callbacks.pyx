@@ -2,7 +2,6 @@
 # distutils: libraries = cec
 
 from libc.stdint cimport uint8_t
-#include "cec_types.pxd"
 from cec_types cimport *
 
 cdef int log_message_cb(void* context, cec_log_message msg):
