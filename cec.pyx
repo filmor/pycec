@@ -31,8 +31,8 @@ cdef class AdapterDescriptor:
     cdef readonly str com_name
 
     cdef fill(self, const cec_adapter_descriptor* desc):
-        self.com_path = bytes(desc.strComPath).encode("utf-8")
-        self.com_name = bytes(desc.strComName).encode("utf-8")
+        self.com_path = bytes(desc.strComPath).decode("utf-8")
+        self.com_name = bytes(desc.strComName).decode("utf-8")
 
 cdef class Adapter:
     cdef ICECAdapter* _adapter
@@ -87,8 +87,8 @@ cdef class Adapter:
             else:
                 port = l[0].com_name
 
-        cdef bytes decoded = port.decode("utf-8")
-        cdef bool result = self._adapter.Open(decoded, timeout)
+        cdef bytes encoded = port.encode("utf-8")
+        cdef bool result = self._adapter.Open(encoded, timeout)
         return result
 
     def close(self):
