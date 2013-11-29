@@ -1,8 +1,10 @@
 # distutils: language = c++
 # distutils: libraries = cec
+from cython cimport sizeof
 from libcpp cimport bool
-from libc.string cimport strncpy
-from libc.stdint cimport uint32_t
+from libc.string cimport strncpy, memcpy
+from libc.stdint cimport *
+from libc.stdlib cimport malloc, free
 
 from cec_types cimport *
 from cec_callbacks cimport fill_callbacks_struct
@@ -13,12 +15,21 @@ cdef extern from "libcec/cec.h" namespace "CEC" nogil:
         void Close()
         bool PingAdapter()
         bool StartBootloader()
+        int8_t DetectAdapters(cec_adapter_descriptor*, uint8_t)
         void EnableCallbacks(void* param, ICECCallbacks* callbacks)
 
 
 cdef extern from "libcec/cec.h" nogil:
     cdef void* CECInitialise(libcec_configuration*)
     cdef void CECDestroy(ICECAdapter*)
+
+cdef class AdapterDescriptor:
+    cdef bytes com_path
+    cdef bytes com_name
+
+    cdef fill(self, const cec_adapter_descriptor* desc):
+        self.com_path = desc.strComPath
+        self.com_name = desc.strComName
 
 cdef class Adapter:
     cdef ICECAdapter* _adapter
@@ -47,8 +58,6 @@ cdef class Adapter:
 
         self._callbacks = new ICECCallbacks()
         fill_callbacks_struct(self._callbacks)
-        conf.callbacks = self._callbacks
-        conf.callbackParam = <void*>self
         
         self._adapter = <ICECAdapter*>CECInitialise(&conf)
         if self._adapter == NULL:
@@ -60,12 +69,32 @@ cdef class Adapter:
 
         CECDestroy(self._adapter)
 
-    def open(self, char* port, int timeout):
+    def open(self, char* port, int timeout = 1000):
         cdef bool result = self._adapter.Open(port, timeout)
-        if result:
-            pass
+        return result
 
     def close(self):
-        self._adapter.EnableCallbacks(NULL, NULL)
+        self.disable_callbacks()
         self._adapter.Close()
+
+    def enable_callbacks(self):
+        self._adapter.EnableCallbacks(<void*>self, self._callbacks)
+    
+    def disable_callbacks(self):
+        self._adapter.EnableCallbacks(NULL, NULL)
+
+    def list_adapters(self, uint8_t max_count=10):
+        cdef cec_adapter_descriptor* device_descs = \
+                <cec_adapter_descriptor*>malloc(max_count *
+                        sizeof(cec_adapter_descriptor))
+
+        count = self._adapter.DetectAdapters(device_descs, max_count)
+        result = []
+        for i in range(count):
+            desc = AdapterDescriptor()
+            desc.fill(&device_descs[i])
+            result.append(desc)
+
+        free(device_descs)
+        return result
 

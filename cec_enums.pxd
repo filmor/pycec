@@ -124,3 +124,9 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
         CECDEVICE_UNREGISTERED     = 15
         CECDEVICE_BROADCAST        = 15
 
+    enum cec_adapter_type:
+        ADAPTERTYPE_UNKNOWN          = 0
+        ADAPTERTYPE_P8_EXTERNAL      = 0x1
+        ADAPTERTYPE_P8_DAUGHTERBOARD = 0x2
+        ADAPTERTYPE_RPI              = 0x100
+        ADAPTERTYPE_TDA995x          = 0x200

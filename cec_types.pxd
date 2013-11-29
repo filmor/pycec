@@ -35,3 +35,14 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
     cdef struct libcec_parameter:
         pass
 
+    # Adapter descriptor
+    cdef struct cec_adapter_descriptor:
+        char             strComPath[1024]
+        char             strComName[1024]
+        uint16_t         iVendorId
+        uint16_t         iProductId
+        uint16_t         iFirmwareVersion
+        uint16_t         iPhysicalAddress
+        uint32_t         iFirmwareBuildDate
+        cec_adapter_type adapterType
+
