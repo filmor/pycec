@@ -7,7 +7,7 @@ from cec_types cimport *
 cdef int log_message_cb(void* context, cec_log_message msg):
     try:
         self = <object>context
-        self.log_callback()
+        self.log_callback(msg.level, msg.message)
     finally:
         return 1
 
