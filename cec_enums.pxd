@@ -129,3 +129,11 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
         ADAPTERTYPE_P8_DAUGHTERBOARD = 0x2
         ADAPTERTYPE_RPI              = 0x100
         ADAPTERTYPE_TDA995x          = 0x200
+
+    enum cec_device_type:
+        CEC_DEVICE_TYPE_TV               = 0
+        CEC_DEVICE_TYPE_RECORDING_DEVICE = 1
+        CEC_DEVICE_TYPE_RESERVED         = 2
+        CEC_DEVICE_TYPE_TUNER            = 3
+        CEC_DEVICE_TYPE_PLAYBACK_DEVICE  = 4
+        CEC_DEVICE_TYPE_AUDIO_SYSTEM     = 5

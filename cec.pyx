@@ -46,20 +46,21 @@ cdef class Adapter:
     cdef public object menu_callback
     cdef public object source_callback
 
-    def __cinit__(self, device_name=b"python", init_video=False):
+    def __cinit__(self, device_name="python"):
         # TODO: This should be called globally, since InitVideo may only be
         #       called once (at most)
-        name_len = len(device_name)
-        if name_len > 12:
+        cdef libcec_configuration conf
+        cdef bytes encoded_dn = device_name.encode("utf-8")
+        cdef char* c_device_name = encoded_dn
+
+        if len(encoded_dn) > 13:
             raise RuntimeError("Device name has to be less than 13 characters")
 
-        cdef libcec_configuration conf
-        cdef char* c_device_name = device_name
 
-        strncpy(c_device_name, conf.strDeviceName, name_len)
-        conf.strDeviceName[name_len] = '\0'
+        strncpy(encoded_dn, conf.strDeviceName, len(encoded_dn))
         conf.bActivateSource = 0
         conf.clientVersion = 0x2103 # version 2.1.3
+        conf.deviceTypes.Add(CEC_DEVICE_TYPE_PLAYBACK_DEVICE)
 
         self._callbacks = new ICECCallbacks()
         fill_callbacks_struct(self._callbacks)
@@ -69,11 +70,13 @@ cdef class Adapter:
             raise RuntimeError("Couldn't initialise CEC adapter")
 
         global _video_initialized
-        if init_video and not _video_initialized:
+        if not _video_initialized:
             self._adapter.InitVideoStandalone()
             _video_initialized = True
 
     def __dealloc__(self):
+        self.disable_callbacks()
+
         if self._callbacks:
             del self._callbacks
 

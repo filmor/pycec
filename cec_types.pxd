@@ -12,12 +12,19 @@ cdef extern from "libcec/cectypes.h" namespace "CEC":
         int (*CBCecMenuStateChanged)(void*, const cec_menu_state)
         void (*CBCecSourceActivated)(void*, const cec_logical_address, const uint8_t)
 
+    cdef cppclass cec_device_type_list:
+        void Clear()
+        void Add(cec_device_type)
+        void IsSet(cec_device_type)
+        bool IsEmpty() const
+
     cdef cppclass libcec_configuration:
         int clientVersion
         char strDeviceName[13]
         bool bActivateSource
         ICECCallbacks* callbacks
         void* callbackParam
+        cec_device_type_list deviceTypes
 
     # Callback parameters
     cdef struct cec_log_message:
