@@ -91,25 +91,33 @@ cdef class Adapter:
                 port = l[0].com_name
 
         cdef bytes encoded = port.encode("utf-8")
-        cdef bool result = self._adapter.Open(encoded, timeout)
+        cdef const char* c_encoded = encoded
+        cdef bool result
+        with nogil:
+            result = self._adapter.Open(c_encoded, timeout)
         return result
 
     def close(self):
         self.disable_callbacks()
-        self._adapter.Close()
+        with nogil:
+            self._adapter.Close()
 
     def enable_callbacks(self):
-        self._adapter.EnableCallbacks(<void*>self, self._callbacks)
+        with nogil:
+            self._adapter.EnableCallbacks(<void*>self, self._callbacks)
     
     def disable_callbacks(self):
-        self._adapter.EnableCallbacks(NULL, NULL)
+        with nogil:
+            self._adapter.EnableCallbacks(NULL, NULL)
 
     def list_adapters(self, uint8_t max_count=10):
         cdef cec_adapter_descriptor* device_descs = \
                 <cec_adapter_descriptor*>malloc(max_count *
                         sizeof(cec_adapter_descriptor))
 
-        count = self._adapter.DetectAdapters(device_descs, max_count)
+        with nogil:
+            count = self._adapter.DetectAdapters(device_descs, max_count)
+
         result = []
         if count <= 0:
             return result
