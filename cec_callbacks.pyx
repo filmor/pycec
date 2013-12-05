@@ -10,7 +10,7 @@ cdef int log_message_cb(void* context, cec_log_message msg) with gil:
     print("Log:", msg.message)
     try:
         self = <object>context
-        self.log_callback(msg.level, msg.message)
+        self._callbacks_dict[CB_LOG](msg.level, msg.message)
     except:
         pass
     return 0
@@ -19,7 +19,7 @@ cdef int key_press_cb(void* context, cec_keypress msg) with gil:
     print("Keypress")
     try:
         self = <object>context
-        self.key_callback()
+        self._callbacks_dict[CB_KEY]()
     except:
         pass
     return 0
@@ -28,7 +28,7 @@ cdef int command_cb(void* context, cec_command msg) with gil:
     print("Command")
     try:
         self = <object>context
-        self.command_callback()
+        self._callbacks_dict[CB_COMMAND]()
     except:
         pass
     return 0
@@ -70,12 +70,21 @@ cdef void source_cb(void* context, const cec_logical_address msg1, const uint8_t
     except:
         pass
 
-cdef void fill_callbacks_struct(ICECCallbacks* ptr):
-    ptr.CBCecLogMessage = &log_message_cb
-    ptr.CBCecKeyPress = &key_press_cb
-    ptr.CBCecCommand = &command_cb
-    ptr.CBCecConfigurationChanged = &config_cb
-    ptr.CBCecAlert = &alert_cb
-    ptr.CBCecMenuStateChanged = &menu_cb
-    ptr.CBCecSourceActivated = &source_cb
+cdef void toggle_callback(ICECCallbacks* ptr, callback_type tp, bool state):
+    if tp == CB_LOG:
+        ptr.CBCecLogMessage = &log_message_cb if state else NULL
+    elif tp == CB_KEY:
+        ptr.CBCecKeyPress = &key_press_cb if state else NULL
+    elif tp == CB_COMMAND:
+        ptr.CBCecCommand = &command_cb if state else NULL
+    elif tp == CB_CONFIG:
+        ptr.CBCecConfigurationChanged = &config_cb if state else NULL
+    elif tp == CB_ALERT:
+        ptr.CBCecAlert = &alert_cb if state else NULL
+    elif tp == CB_MENU:
+        ptr.CBCecMenuStateChanged = &menu_cb if state else NULL
+    elif tp == CB_SOURCE:
+        ptr.CBCecSourceActivated = &source_cb if state else NULL
+    else:
+        raise AttributeError("Unknown callback type %s" % tp)
 

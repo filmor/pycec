@@ -7,7 +7,8 @@ from libc.stdint cimport *
 from libc.stdlib cimport malloc, free
 
 from cec_types cimport *
-from cec_callbacks cimport fill_callbacks_struct
+from cec_callbacks cimport toggle_callback, callback_type
+cimport cec_callbacks
 
 cdef extern from "libcec/cec.h" namespace "CEC" nogil:
     cdef cppclass ICECAdapter:
@@ -38,17 +39,39 @@ cdef class Adapter:
     cdef ICECAdapter* _adapter
     cdef ICECCallbacks* _callbacks
 
-    cdef public object log_callback
-    cdef public object key_callback
-    cdef public object command_callback
-    cdef public object config_callback
-    cdef public object alert_callback
-    cdef public object menu_callback
-    cdef public object source_callback
+    # TODO: Only replace if the state actually changes
+    cdef void _toggle_callback(self, callback_type tp, bool state):
+        cdef ICECCallbacks* new_callbacks = new ICECCallbacks()
+        if self._callbacks:
+            memcpy(new_callbacks, self._callbacks, sizeof(new_callbacks))
+
+        toggle_callback(new_callbacks, tp, state)
+
+        self.disable_callbacks()
+        if self._callbacks:
+            del self._callbacks
+        
+        self._callbacks = new_callbacks
+        self.enable_callbacks()
+
+    cdef dict _callbacks_dict
+
+    def set_callback(self, callback_type tp, object callback):
+        if callback is None:
+            self._toggle_callback(tp, False)
+        elif not callable(callback):
+            raise RuntimeError("Parameter not callable")
+        else:
+            self._callbacks_dict[tp] = callback
+            self._toggle_callback(tp, True)
+
+    def get_callback(self, callback_type tp):
+        return self._callbacks_dict.getdefault(tp, None)
+
+    def unset_callback(self, callback_type tp):
+        self.set_callback(tp, None)
 
     def __cinit__(self, device_name="python"):
-        # TODO: This should be called globally, since InitVideo may only be
-        #       called once (at most)
         cdef libcec_configuration conf
         cdef bytes encoded_dn = device_name.encode("utf-8")
         cdef char* c_device_name = encoded_dn
@@ -62,8 +85,6 @@ cdef class Adapter:
         conf.clientVersion = 0x2103 # version 2.1.3
         conf.deviceTypes.Add(CEC_DEVICE_TYPE_PLAYBACK_DEVICE)
 
-        self._callbacks = new ICECCallbacks()
-        fill_callbacks_struct(self._callbacks)
         
         self._adapter = <ICECAdapter*>CECInitialise(&conf)
         if self._adapter == NULL:
@@ -73,6 +94,10 @@ cdef class Adapter:
         if not _video_initialized:
             self._adapter.InitVideoStandalone()
             _video_initialized = True
+
+        self._callbacks = new ICECCallbacks()
+        self._callbacks_dict = dict()
+        self.enable_callbacks()
 
     def __dealloc__(self):
         self.disable_callbacks()
@@ -130,3 +155,10 @@ cdef class Adapter:
         free(device_descs)
         return result
 
+CB_LOG = cec_callbacks.CB_LOG
+CB_KEY = cec_callbacks.CB_KEY
+CB_COMMAND = cec_callbacks.CB_COMMAND
+CB_CONFIG = cec_callbacks.CB_CONFIG
+CB_ALERT = cec_callbacks.CB_ALERT
+CB_MENU = cec_callbacks.CB_MENU
+CB_SOURCE = cec_callbacks.CB_SOURCE
