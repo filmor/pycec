@@ -30,8 +30,8 @@ cdef extern from "libcec/cec.h" nogil:
 cdef bool _video_initialized = False
 
 cdef class AdapterDescriptor:
-    cdef readonly str com_path
-    cdef readonly str com_name
+    cdef readonly object com_path
+    cdef readonly object com_name
 
     cdef fill(self, const cec_adapter_descriptor* desc):
         self.com_path = bytes(desc.strComPath).decode("utf-8")
@@ -107,7 +107,7 @@ cdef class Adapter:
 
         CECDestroy(self._adapter)
 
-    def open(self, str port = "", int timeout = 1000):
+    def open(self, port = "", int timeout = 1000):
         if port == "":
             l = self.list_adapters(1)
             if len(l) == 0:
