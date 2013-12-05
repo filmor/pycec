@@ -1,3 +1,12 @@
+cdef enum callback_type:
+    CB_LOG
+    CB_KEY
+    CB_COMMAND
+    CB_CONFIG
+    CB_ALERT
+    CB_MENU
+    CB_SOURCE
+
 cdef extern from "libcec/cectypes.h" namespace "CEC":
     enum cec_log_level:
         CEC_LOG_ERROR   = 1

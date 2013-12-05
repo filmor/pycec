@@ -7,8 +7,10 @@ from libc.stdint cimport *
 from libc.stdlib cimport malloc, free
 
 from cec_types cimport *
-from cec_callbacks cimport toggle_callback, callback_type
-cimport cec_callbacks
+cimport cec_enums
+
+include "cec_enums_py.pxi"
+include "cec_callbacks.pxi"
 
 cdef extern from "libcec/cec.h" namespace "CEC" nogil:
     cdef cppclass ICECAdapter:
@@ -20,11 +22,11 @@ cdef extern from "libcec/cec.h" namespace "CEC" nogil:
         void EnableCallbacks(void* param, ICECCallbacks* callbacks)
         void InitVideoStandalone()
 
-
 cdef extern from "libcec/cec.h" nogil:
     cdef void* CECInitialise(libcec_configuration*)
     cdef void CECDestroy(ICECAdapter*)
 
+# Global
 cdef bool _video_initialized = False
 
 cdef class AdapterDescriptor:
@@ -40,10 +42,10 @@ cdef class Adapter:
     cdef ICECCallbacks* _callbacks
 
     # TODO: Only replace if the state actually changes
-    cdef void _toggle_callback(self, callback_type tp, bool state):
+    cdef void _toggle_callback(self, cec_enums.callback_type tp, bool state):
         cdef ICECCallbacks* new_callbacks = new ICECCallbacks()
         if self._callbacks:
-            memcpy(new_callbacks, self._callbacks, sizeof(new_callbacks))
+            memcpy(new_callbacks, self._callbacks, sizeof(ICECCallbacks))
 
         toggle_callback(new_callbacks, tp, state)
 
@@ -56,7 +58,7 @@ cdef class Adapter:
 
     cdef dict _callbacks_dict
 
-    def set_callback(self, callback_type tp, object callback):
+    def set_callback(self, cec_enums.callback_type tp, object callback):
         if callback is None:
             self._toggle_callback(tp, False)
         elif not callable(callback):
@@ -65,10 +67,10 @@ cdef class Adapter:
             self._callbacks_dict[tp] = callback
             self._toggle_callback(tp, True)
 
-    def get_callback(self, callback_type tp):
-        return self._callbacks_dict.getdefault(tp, None)
+    def get_callback(self, cec_enums.callback_type tp):
+        return self._callbacks_dict.get(tp, None)
 
-    def unset_callback(self, callback_type tp):
+    def unset_callback(self, cec_enums.callback_type tp):
         self.set_callback(tp, None)
 
     def __cinit__(self, device_name="python"):
@@ -79,13 +81,11 @@ cdef class Adapter:
         if len(encoded_dn) > 13:
             raise RuntimeError("Device name has to be less than 13 characters")
 
-
         strncpy(encoded_dn, conf.strDeviceName, len(encoded_dn))
         conf.bActivateSource = 0
         conf.clientVersion = 0x2103 # version 2.1.3
         conf.deviceTypes.Add(CEC_DEVICE_TYPE_PLAYBACK_DEVICE)
 
-        
         self._adapter = <ICECAdapter*>CECInitialise(&conf)
         if self._adapter == NULL:
             raise RuntimeError("Couldn't initialise CEC adapter")
@@ -155,10 +155,3 @@ cdef class Adapter:
         free(device_descs)
         return result
 
-CB_LOG = cec_callbacks.CB_LOG
-CB_KEY = cec_callbacks.CB_KEY
-CB_COMMAND = cec_callbacks.CB_COMMAND
-CB_CONFIG = cec_callbacks.CB_CONFIG
-CB_ALERT = cec_callbacks.CB_ALERT
-CB_MENU = cec_callbacks.CB_MENU
-CB_SOURCE = cec_callbacks.CB_SOURCE
