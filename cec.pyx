@@ -84,7 +84,7 @@ cdef class Adapter:
         strncpy(encoded_dn, conf.strDeviceName, len(encoded_dn))
         conf.bActivateSource = 0
         conf.clientVersion = 0x2103 # version 2.1.3
-        conf.deviceTypes.Add(CEC_DEVICE_TYPE_PLAYBACK_DEVICE)
+        conf.deviceTypes.Add(cec_enums.CEC_DEVICE_TYPE_PLAYBACK_DEVICE)
 
         self._adapter = <ICECAdapter*>CECInitialise(&conf)
         if self._adapter == NULL:
