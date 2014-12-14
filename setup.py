@@ -5,4 +5,4 @@ from Cython.Build import cythonize
 
 setup(name='cec', version='0.1.0',
       description="Python bindings for libcec",
-      ext_modules=cythonize("*.pyx"))
+      ext_modules=cythonize("src/*.pyx"))
